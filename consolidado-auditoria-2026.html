@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Executivo de Qualidade (QA) 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+      }
+
+      /* Chart Container Specifics */
+      .chart-wrapper {
+        position: relative;
+        width: 100%;
+        height: 350px; /* Base height */
+        max-height: 400px;
+      }
+      @media (max-width: 768px) {
+        .chart-wrapper {
+          height: 250px;
+        }
+      }
+
+      .kpi-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+
+      /* Custom Scrollbar for text areas */
+      .custom-scroll::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+    </style>
+    <!-- Chosen Palette: Corporate Blue & Neutral -->
+    <!-- Application Structure Plan: 
+         1. Header: Context and Period.
+         2. Filter Bar: Allows selecting a specific month to update KPIs, or "Visão Geral" for latest/averages.
+         3. KPI Row: 4 key metrics (Quality, Evidence, Code, Automation) giving immediate health status.
+         4. Main Grid: 
+            - Left Column: 2 Primary Charts (Manual Quality & Evidence Trends).
+            - Right Column: 2 Secondary Charts (Automation/Unit Gap & AI Adoption).
+         5. Deep Dive Section: Detailed text analysis, Gaps, and Action Plan (Sonar data included).
+         Rationale: Executive view first (numbers), followed by trends (visuals), ending with strategy (text).
+    -->
+    <!-- Visualization & Content Choices:
+         - Manual Quality: Stacked Bar (Adequate vs Inadequate) -> Goal: Compare proportions over time.
+         - Evidence: Line Chart -> Goal: Show compliance trend.
+         - Automation vs Unit: Mixed Chart (Bar for E2E volume, Line for Unit %) -> Goal: Contrast the disparity in growth.
+         - AI Adoption: Line Chart -> Goal: Highlight the recent drop in August.
+         - KPIs: Dynamic Number Cards -> Goal: Instant status check.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+  </head>
+  <body class="bg-slate-50 text-slate-800">
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
+          <div class="flex items-center gap-3">
+            <div class="bg-blue-900 text-white p-2 rounded-lg">
+              <i class="fas fa-chart-line text-xl"></i>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold text-slate-900">
+                Dashboard de Qualidade QA
+              </h1>
+              <p class="text-xs text-slate-500">
+                Relatório Executivo • Abril - Agosto 2025
+              </p>
+            </div>
+          </div>
+          <div class="hidden md:flex items-center gap-4">
+            <span
+              class="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full"
+              ><i class="fas fa-calendar-check mr-2"></i>Última atualização:
+              Agosto 2025</span
+            >
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Controls -->
+      <div
+        class="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4"
+      >
+        <div>
+          <h2 class="text-2xl font-bold text-slate-800">
+            Visão Geral de Performance
+          </h2>
+          <p class="text-slate-600 mt-1">
+            Selecione um mês para filtrar os indicadores ou visualize a
+            tendência completa.
+          </p>
+        </div>
+
+        <div
+          class="flex bg-white rounded-lg shadow-sm border border-slate-200 p-1"
+          id="monthSelector"
+        >
+          <button
+            onclick="updateView('all')"
+            class="px-4 py-2 text-sm font-medium rounded-md bg-blue-50 text-blue-700 transition-colors"
+            id="btn-all"
+          >
+            Tendência (Todos)
+          </button>
+          <button
+            onclick="updateView('Abril')"
+            class="px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 transition-colors"
+            id="btn-Abril"
+          >
+            Abril
+          </button>
+          <button
+            onclick="updateView('Maio')"
+            class="px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 transition-colors"
+            id="btn-Maio"
+          >
+            Maio
+          </button>
+          <button
+            onclick="updateView('Julho')"
+            class="px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 transition-colors"
+            id="btn-Julho"
+          >
+            Julho
+          </button>
+          <button
+            onclick="updateView('Agosto')"
+            class="px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 transition-colors"
+            id="btn-Agosto"
+          >
+            Agosto
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- KPI 1 -->
+        <div
+          class="kpi-card bg-white rounded-xl shadow-sm border border-slate-200 p-6 relative overflow-hidden"
+        >
+          <div class="absolute top-0 right-0 p-4 opacity-10">
+            <i class="fas fa-pen-fancy text-4xl text-blue-600"></i>
+          </div>
+          <h3
+            class="text-sm font-semibold text-slate-500 uppercase tracking-wider"
+          >
+            Qualidade Testes Manuais
+          </h3>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span class="text-3xl font-bold text-slate-900" id="kpi-manual"
+              >36%</span
+            >
+            <span
+              class="text-sm font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded"
+              id="kpi-manual-trend"
+              >Adequado</span
+            >
+          </div>
+          <p class="text-xs text-slate-500 mt-2">
+            Validação de critérios de aceite e escrita
+          </p>
+          <div class="w-full bg-slate-100 rounded-full h-1.5 mt-3">
+            <div
+              class="bg-blue-600 h-1.5 rounded-full"
+              id="bar-manual"
+              style="width: 36%"
+            ></div>
+          </div>
+        </div>
+
+        <!-- KPI 2 -->
+        <div
+          class="kpi-card bg-white rounded-xl shadow-sm border border-slate-200 p-6 relative overflow-hidden"
+        >
+          <div class="absolute top-0 right-0 p-4 opacity-10">
+            <i class="fas fa-file-contract text-4xl text-emerald-600"></i>
+          </div>
+          <h3
+            class="text-sm font-semibold text-slate-500 uppercase tracking-wider"
+          >
+            Conformidade (Evidências)
+          </h3>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span class="text-3xl font-bold text-slate-900" id="kpi-evidence"
+              >75%</span
+            >
+            <span
+              class="text-sm font-medium text-amber-500 bg-amber-50 px-2 py-0.5 rounded"
+              id="kpi-evidence-trend"
+              >Com Evidência</span
+            >
+          </div>
+          <p class="text-xs text-slate-500 mt-2">
+            Tarefas com provas de teste anexadas
+          </p>
+          <div class="w-full bg-slate-100 rounded-full h-1.5 mt-3">
+            <div
+              class="bg-emerald-500 h-1.5 rounded-full"
+              id="bar-evidence"
+              style="width: 75%"
+            ></div>
+          </div>
+        </div>
+
+        <!-- KPI 3 -->
+        <div
+          class="kpi-card bg-white rounded-xl shadow-sm border border-slate-200 p-6 relative overflow-hidden"
+        >
+          <div class="absolute top-0 right-0 p-4 opacity-10">
+            <i class="fas fa-robot text-4xl text-purple-600"></i>
+          </div>
+          <h3
+            class="text-sm font-semibold text-slate-500 uppercase tracking-wider"
+          >
+            Automação E2E
+          </h3>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span class="text-3xl font-bold text-slate-900" id="kpi-auto"
+              >91</span
+            >
+            <span class="text-sm font-medium text-slate-500">Cenários</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-2">
+            Blindagem de fluxos críticos
+          </p>
+          <div class="w-full bg-slate-100 rounded-full h-1.5 mt-3">
+            <div
+              class="bg-purple-600 h-1.5 rounded-full"
+              id="bar-auto"
+              style="width: 91%"
+            ></div>
+          </div>
+        </div>
+
+        <!-- KPI 4 -->
+        <div
+          class="kpi-card bg-white rounded-xl shadow-sm border border-slate-200 p-6 relative overflow-hidden"
+        >
+          <div class="absolute top-0 right-0 p-4 opacity-10">
+            <i class="fas fa-bug text-4xl text-rose-600"></i>
+          </div>
+          <h3
+            class="text-sm font-semibold text-slate-500 uppercase tracking-wider"
+          >
+            Cobertura Unitária
+          </h3>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span class="text-3xl font-bold text-slate-900" id="kpi-unit"
+              >0.4%</span
+            >
+            <span
+              class="text-sm font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded"
+              >Crítico</span
+            >
+          </div>
+          <p class="text-xs text-slate-500 mt-2">Risco técnico elevado</p>
+          <div class="w-full bg-slate-100 rounded-full h-1.5 mt-3">
+            <div
+              class="bg-rose-500 h-1.5 rounded-full"
+              id="bar-unit"
+              style="width: 1%"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Chart 1: Manual Quality -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-slate-800">
+              Eficácia dos Testes Manuais
+            </h3>
+            <div class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+              Adequado vs Inadequado
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="qualityChart"></canvas>
+          </div>
+          <p
+            class="text-sm text-slate-500 mt-4 italic border-l-4 border-blue-500 pl-3"
+          >
+            A qualidade da escrita teve um pico em Julho (48%), mas sofreu
+            regressão em Agosto.
+          </p>
+        </div>
+
+        <!-- Chart 2: Evidence & Automation -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-slate-800">
+              Cultura de Evidência vs Automação
+            </h3>
+            <div class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+              Compliance & E2E
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="complianceChart"></canvas>
+          </div>
+          <p
+            class="text-sm text-slate-500 mt-4 italic border-l-4 border-emerald-500 pl-3"
+          >
+            Transformação cultural visível a partir de Maio. Automação E2E
+            dobrou e estabilizou.
+          </p>
+        </div>
+
+        <!-- Chart 3: AI Adoption -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-slate-800">
+              Adoção de IA (Copilot)
+            </h3>
+            <div class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+              Taxa de Aceitação
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="aiChart"></canvas>
+          </div>
+          <p
+            class="text-sm text-slate-500 mt-4 italic border-l-4 border-purple-500 pl-3"
+          >
+            Queda acentuada na aceitação em Agosto (11.3%) sugere necessidade de
+            investigação.
+          </p>
+        </div>
+
+        <!-- Detailed Metrics & Sonar -->
+        <div
+          class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-slate-800">
+              Saúde Técnica (Sonar)
+            </h3>
+            <div class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+              Métricas de Código
+            </div>
+          </div>
+
+          <div class="flex-grow flex flex-col justify-center gap-4">
+            <!-- Sonar Item -->
+            <div
+              class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  class="bg-rose-100 text-rose-600 p-2 rounded w-10 h-10 flex items-center justify-center"
+                >
+                  <i class="fas fa-shield-alt"></i>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-slate-700">
+                    Cobertura Unitária
+                  </p>
+                  <p class="text-xs text-slate-500">Estabilidade do código</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xl font-bold text-rose-600">0.4%</span>
+                <span class="text-xs block text-slate-400">Meta: 60%</span>
+              </div>
+            </div>
+
+            <!-- Sonar Item -->
+            <div
+              class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  class="bg-amber-100 text-amber-600 p-2 rounded w-10 h-10 flex items-center justify-center"
+                >
+                  <i class="fas fa-copy"></i>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-slate-700">
+                    Duplicação de Código
+                  </p>
+                  <p class="text-xs text-slate-500">Refatoração em andamento</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xl font-bold text-emerald-600">18.3%</span>
+                <span class="text-xs block text-emerald-600"
+                  >↓ Melhorou (era 21%)</span
+                >
+              </div>
+            </div>
+
+            <!-- Sonar Item -->
+            <div
+              class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  class="bg-blue-100 text-blue-600 p-2 rounded w-10 h-10 flex items-center justify-center"
+                >
+                  <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-slate-700">
+                    Débito Técnico
+                  </p>
+                  <p class="text-xs text-slate-500">Esforço estimado</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xl font-bold text-slate-700">1066d</span>
+                <span class="text-xs block text-slate-400">Estável</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Plan Section -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Gaps Column -->
+        <div
+          class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-rose-500"
+        >
+          <h3
+            class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"
+          >
+            <i class="fas fa-exclamation-triangle text-rose-500"></i> Principais
+            Gaps (Agosto)
+          </h3>
+          <ul class="space-y-4">
+            <li class="flex gap-3">
+              <span class="text-rose-500 font-bold">01.</span>
+              <p class="text-sm text-slate-600">
+                <strong class="text-slate-800"
+                  >Testes Manuais Inadequados:</strong
+                >
+                64% dos testes analisados possuem critérios vagos ou
+                incompletos.
+              </p>
+            </li>
+            <li class="flex gap-3">
+              <span class="text-rose-500 font-bold">02.</span>
+              <p class="text-sm text-slate-600">
+                <strong class="text-slate-800">Baixa Rastreabilidade:</strong>
+                Apenas 8.6% das tarefas possuem subtarefas de teste linkadas.
+              </p>
+            </li>
+            <li class="flex gap-3">
+              <span class="text-rose-500 font-bold">03.</span>
+              <p class="text-sm text-slate-600">
+                <strong class="text-slate-800">Cobertura Unitária Zero:</strong>
+                Estagnação em 0.4% mantém o risco de regressão alto.
+              </p>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Action Plan Column -->
+        <div
+          class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500 md:col-span-2"
+        >
+          <h3
+            class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"
+          >
+            <i class="fas fa-tasks text-blue-500"></i> Plano de Ação &
+            Estratégia Q4
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <h4 class="font-semibold text-slate-700 mb-2">Ações Imediatas</h4>
+              <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <ul class="space-y-3">
+                  <li class="text-sm text-slate-700 flex items-start gap-2">
+                    <i class="fas fa-check-circle text-blue-600 mt-0.5"></i>
+                    <span
+                      ><strong>Workshop de Escrita:</strong> Treinamento focado
+                      em Gherkin e Critérios de Aceite (Resp:
+                      Dircélia/Elaine).</span
+                    >
+                  </li>
+                  <li class="text-sm text-slate-700 flex items-start gap-2">
+                    <i class="fas fa-check-circle text-blue-600 mt-0.5"></i>
+                    <span
+                      ><strong>Campanha "Por que Evidenciar?":</strong> Reforço
+                      cultural para manter o índice de evidências alto.</span
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div>
+              <h4 class="font-semibold text-slate-700 mb-2">
+                Mudanças Estruturais
+              </h4>
+              <div
+                class="bg-emerald-50 p-4 rounded-lg border border-emerald-100"
+              >
+                <ul class="space-y-3">
+                  <li class="text-sm text-slate-700 flex items-start gap-2">
+                    <i class="fas fa-arrow-right text-emerald-600 mt-0.5"></i>
+                    <span
+                      ><strong>Nova Regra de PR:</strong> Bloqueio de merge sem
+                      incremento mínimo de cobertura de testes unitários.</span
+                    >
+                  </li>
+                  <li class="text-sm text-slate-700 flex items-start gap-2">
+                    <i class="fas fa-arrow-right text-emerald-600 mt-0.5"></i>
+                    <span
+                      ><strong>Investigação IA:</strong> Analisar se a queda de
+                      aceitação é técnica ou falta de treinamento.</span
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 mt-12 py-8">
+      <div class="max-w-7xl mx-auto px-4 text-center">
+        <p class="text-slate-400 text-sm">
+          © 2025 Rentcars - Tech R&D Quality Assurance
+        </p>
+      </div>
+    </footer>
+
+    <!-- Logic -->
+    <script>
+      // --- DATASET ---
+      const qaData = {
+        months: ["Abril", "Maio", "Julho", "Agosto"], // June missing in source
+
+        manualQuality: {
+          adequate: [14, 21, 48, 36],
+          inadequate: [86, 79, 52, 64],
+        },
+
+        evidence: {
+          compliance: [29.2, 89.5, 88.0, 75.0],
+        },
+
+        automation: {
+          e2e: [39, 48, 91, 91],
+          unit: [0.0, 0.1, 0.4, 0.4],
+        },
+
+        ai: {
+          acceptance: [17.5, 17.2, 21.0, 11.3],
+          lines: [8000, 9900, 15000, 5300],
+        },
+
+        sonar: {
+          duplication: [21.1, 21.1, 18.3, 18.3],
+          debt: [1063, 1064, 1066, 1066],
+        },
+      };
+
+      // --- CHART CONFIGURATION ---
+      Chart.defaults.font.family = "'Inter', sans-serif";
+      Chart.defaults.color = "#64748b";
+
+      // 1. Quality Chart (Stacked)
+      const ctxQuality = document
+        .getElementById("qualityChart")
+        .getContext("2d");
+      const qualityChart = new Chart(ctxQuality, {
+        type: "bar",
+        data: {
+          labels: qaData.months,
+          datasets: [
+            {
+              label: "Adequado (%)",
+              data: qaData.manualQuality.adequate,
+              backgroundColor: "#3b82f6", // blue-500
+              borderRadius: 4,
+            },
+            {
+              label: "Inadequado (%)",
+              data: qaData.manualQuality.inadequate,
+              backgroundColor: "#cbd5e1", // slate-300
+              borderRadius: 4,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, beginAtZero: true, max: 100 },
+          },
+          plugins: {
+            tooltip: { mode: "index", intersect: false },
+          },
+        },
+      });
+
+      // 2. Compliance Chart (Line)
+      const ctxCompliance = document
+        .getElementById("complianceChart")
+        .getContext("2d");
+      const complianceChart = new Chart(ctxCompliance, {
+        type: "line",
+        data: {
+          labels: qaData.months,
+          datasets: [
+            {
+              label: "% Com Evidência",
+              data: qaData.evidence.compliance,
+              borderColor: "#10b981", // emerald-500
+              backgroundColor: "rgba(16, 185, 129, 0.1)",
+              fill: true,
+              tension: 0.4,
+              yAxisID: "y",
+            },
+            {
+              label: "Cenários E2E (Qtd)",
+              data: qaData.automation.e2e,
+              type: "bar",
+              backgroundColor: "#a855f7", // purple-500
+              yAxisID: "y1",
+              barThickness: 20,
+              borderRadius: 4,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              type: "linear",
+              display: true,
+              position: "left",
+              title: { display: true, text: "Evidência (%)" },
+              max: 100,
+            },
+            y1: {
+              type: "linear",
+              display: true,
+              position: "right",
+              title: { display: true, text: "Cenários Autom." },
+              grid: { drawOnChartArea: false },
+            },
+          },
+        },
+      });
+
+      // 3. AI Adoption Chart (Line)
+      const ctxAI = document.getElementById("aiChart").getContext("2d");
+      const aiChart = new Chart(ctxAI, {
+        type: "line",
+        data: {
+          labels: qaData.months,
+          datasets: [
+            {
+              label: "Taxa de Aceitação (%)",
+              data: qaData.ai.acceptance,
+              borderColor: "#f59e0b", // amber-500
+              backgroundColor: "white",
+              borderWidth: 3,
+              pointBackgroundColor: "#f59e0b",
+              pointRadius: 6,
+              tension: 0.3,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, max: 30 },
+          },
+          plugins: {
+            annotation: {
+              annotations: {
+                line1: {
+                  type: "line",
+                  yMin: 11.3,
+                  yMax: 11.3,
+                  borderColor: "red",
+                  borderWidth: 1,
+                  borderDash: [5, 5],
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // --- INTERACTION LOGIC ---
+
+      // Helper to format Trend text color
+      function getTrendColor(current, prev, isPositiveBetter = true) {
+        if (current === prev) return "text-slate-500";
+        if (isPositiveBetter) {
+          return current > prev ? "text-emerald-500" : "text-rose-500";
+        } else {
+          return current < prev ? "text-emerald-500" : "text-rose-500";
+        }
+      }
+
+      // Main Update Function
+      function updateView(selection) {
+        // 1. Update Buttons
+        const buttons = document.querySelectorAll("#monthSelector button");
+        buttons.forEach((btn) => {
+          if (btn.id === `btn-${selection}`) {
+            btn.classList.remove("text-slate-600", "hover:bg-slate-50");
+            btn.classList.add("bg-blue-50", "text-blue-700", "shadow-sm");
+          } else {
+            btn.classList.add("text-slate-600", "hover:bg-slate-50");
+            btn.classList.remove("bg-blue-50", "text-blue-700", "shadow-sm");
+          }
+        });
+
+        // 2. Determine Data Index
+        let index = -1; // -1 means 'all' (show latest or aggregate)
+        if (selection === "Abril") index = 0;
+        if (selection === "Maio") index = 1;
+        if (selection === "Julho") index = 2;
+        if (selection === "Agosto") index = 3;
+
+        // Default to latest (August/Index 3) if "All" is selected for KPIs
+        const displayIndex = index === -1 ? 3 : index;
+
+        // 3. Update KPI Cards
+
+        // Manual Quality
+        const manualVal = qaData.manualQuality.adequate[displayIndex];
+        document.getElementById("kpi-manual").innerText = manualVal + "%";
+        document.getElementById("bar-manual").style.width = manualVal + "%";
+
+        // Evidence
+        const evVal = qaData.evidence.compliance[displayIndex];
+        document.getElementById("kpi-evidence").innerText = evVal + "%";
+        document.getElementById("bar-evidence").style.width = evVal + "%";
+
+        // Automation
+        const autoVal = qaData.automation.e2e[displayIndex];
+        document.getElementById("kpi-auto").innerText = autoVal;
+        // Scale bar relative to max (91)
+        document.getElementById("bar-auto").style.width =
+          (autoVal / 91) * 100 + "%";
+
+        // Unit Coverage
+        const unitVal = qaData.automation.unit[displayIndex];
+        document.getElementById("kpi-unit").innerText = unitVal + "%";
+
+        // 4. Highlight Charts (Optional visual cue)
+        // We highlight the selected bar/point if specific month selected
+        highlightChartData(qualityChart, index);
+        highlightChartData(complianceChart, index);
+        highlightChartData(aiChart, index);
+      }
+
+      function highlightChartData(chart, selectedIndex) {
+        const datasets = chart.data.datasets;
+
+        datasets.forEach((dataset) => {
+          // If specific month selected
+          if (selectedIndex !== -1) {
+            // Create an array of colors, graying out non-selected
+            const bgColors = dataset.data.map((_, i) => {
+              // Keep original color logic if needed, but for highlight:
+              if (dataset.label === "Adequado (%)")
+                return i === selectedIndex ? "#3b82f6" : "#bfdbfe"; // bright blue vs pale blue
+              if (dataset.label === "Inadequado (%)")
+                return i === selectedIndex ? "#64748b" : "#e2e8f0"; // slate vs light slate
+
+              // For Line charts, we can't easily change point color per index in standard config without scriptable options,
+              // but strictly for bar charts or if we use pointBackgroundColor array:
+              return i === selectedIndex
+                ? dataset.borderColor || dataset.backgroundColor
+                : "#e2e8f0";
+            });
+
+            // Only apply if it's a bar chart for easy color swapping
+            if (chart.config.type === "bar" || dataset.type === "bar") {
+              dataset.backgroundColor = bgColors;
+            }
+          } else {
+            // Reset to default colors
+            if (dataset.label === "Adequado (%)")
+              dataset.backgroundColor = "#3b82f6";
+            if (dataset.label === "Inadequado (%)")
+              dataset.backgroundColor = "#cbd5e1";
+            if (dataset.label === "Cenários E2E (Qtd)")
+              dataset.backgroundColor = "#a855f7";
+          }
+        });
+        chart.update();
+      }
+
+      // Initialize view
+      updateView("all");
+    </script>
+  </body>
+</html>
